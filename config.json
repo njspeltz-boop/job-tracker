@@ -1,0 +1,7 @@
+{
+  "job_titles": ["Software Engineer"],
+  "locations": ["United States"],
+  "remote_only": true,
+  "exclude_keywords": ["Senior", "Staff", "Principal", "Director"],
+  "max_results": 20
+}

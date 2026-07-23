@@ -1,0 +1,38 @@
+name: Find job postings
+
+on:
+  schedule:
+    # Runs at 13:00 UTC (~9am US Eastern) every Monday and Thursday.
+    # GitHub's cron always runs in UTC - adjust the hour here if you
+    # want it to land at a different local time.
+    - cron: "0 13 * * 1,4"
+  workflow_dispatch: {}  # lets you trigger a run manually from the Actions tab
+
+permissions:
+  contents: write
+
+jobs:
+  find-jobs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - run: pip install -r requirements.txt
+
+      - run: python job_search.py
+        env:
+          RAPIDAPI_KEY: ${{ secrets.RAPIDAPI_KEY }}
+          GMAIL_ADDRESS: ${{ secrets.GMAIL_ADDRESS }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+
+      - name: Save updated seen_jobs.json
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add seen_jobs.json
+          git diff --quiet --cached || git commit -m "Update seen jobs list"
+          git push
