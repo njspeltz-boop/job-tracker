@@ -68,11 +68,7 @@ def search_jobs(config):
         }
         response = requests.get(JSEARCH_URL, headers=headers, params=params, timeout=30)
         response.raise_for_status()
-        jobs = response.json().get("data", {}).get("jobs", [])
-        if title == config["job_titles"][0] and jobs:
-            print("DEBUG first job fields:", sorted(jobs[0].keys()))
-            print("DEBUG first job sample:", json.dumps(jobs[0])[:2000])
-        all_jobs.extend(jobs)
+        all_jobs.extend(response.json().get("data", {}).get("jobs", []))
 
     return all_jobs
 
