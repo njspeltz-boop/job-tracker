@@ -14,6 +14,34 @@ ones. Runs automatically every Monday and Thursday via GitHub Actions.
 3. `.github/workflows/job_search.yml` runs `job_search.py` automatically
    twice a week, using secrets you'll set up below, and saves the updated
    `seen_jobs.json` back to the repo so the "already sent" memory persists.
+4. Every run also appends to `search_log.jsonl` — one line per run, listing
+   *every* posting JSearch returned and whether it was emailed or dropped
+   (and why). See "Diagnosing missed or unwanted postings" below.
+
+## Diagnosing missed or unwanted postings
+
+If you spot a role elsewhere that never showed up in an email, or the
+opposite — you got something irrelevant — `search_log.jsonl` has the answer.
+Each line is one run's full results, e.g.:
+
+```json
+{"run_at": "2026-07-23T23:34:02+00:00", "results": [
+  {"job_id": "...", "job_title": "Private Equity Associate", "employer_name": "Acme Capital", "decision": "kept", "reason": "passed all filters"},
+  {"job_id": "...", "job_title": "PE Analyst Intern", "employer_name": "Beta Partners", "decision": "dropped", "reason": "title matched exclude keyword 'intern'"}
+]}
+```
+
+Two cases:
+- **The role appears in the log as "dropped"** — the `reason` tells you which
+  filter caught it (wrong keyword, tagged remote, etc.), so you know exactly
+  what to adjust in `config.json`.
+- **The role never appears in the log at all** — JSearch never returned it
+  for your `search_terms`/`locations`, meaning it's a coverage gap (the
+  source it was posted on isn't indexed by JSearch, or the search terms need
+  broadening), not a filtering problem.
+
+Paste the posting's title/company (or the relevant log line) back to me and
+I can help figure out which case it is and adjust the config.
 
 ## One-time setup
 

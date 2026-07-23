@@ -16,6 +16,7 @@ Needs these environment variables to be set:
 import json
 import os
 import smtplib
+from datetime import datetime, timezone
 from email.mime.text import MIMEText
 from pathlib import Path
 
@@ -23,6 +24,7 @@ import requests
 
 CONFIG_PATH = Path(__file__).parent / "config.json"
 SEEN_JOBS_PATH = Path(__file__).parent / "seen_jobs.json"
+SEARCH_LOG_PATH = Path(__file__).parent / "search_log.jsonl"
 
 JSEARCH_URL = "https://jsearch.p.rapidapi.com/search-v2"
 JSEARCH_HOST = "jsearch.p.rapidapi.com"
@@ -74,37 +76,68 @@ def search_jobs(config):
     return all_jobs
 
 
-def filter_new_jobs(jobs, seen_ids, config):
-    """Drop jobs we've already emailed, remote postings (if configured),
-    anything matching an exclude keyword in the title, and anything that
-    doesn't mention at least one require keyword - checked against the
-    full description, not just the title, since relevant roles are often
-    worded differently than the search terms."""
+def evaluate_jobs(jobs, seen_ids, config):
+    """Decide which jobs to send, and record a reason for every job -
+    kept or dropped - so a posting that never arrived by email can be
+    traced back to the exact filter that caught it (or confirmed as
+    never returned by JSearch at all)."""
     require_keywords = [kw.lower() for kw in config.get("require_keywords", [])]
     exclude_keywords = [kw.lower() for kw in config.get("exclude_keywords", [])]
     exclude_remote = config.get("exclude_remote_results", False)
     max_results = config.get("max_results", 20)
 
     new_jobs = []
+    log_entries = []
     included_ids = set()
+
     for job in jobs:
         job_id = job.get("job_id")
-        title = (job.get("job_title") or "").lower()
+        title = job.get("job_title") or ""
+        title_lower = title.lower()
         description = (job.get("job_description") or "").lower()
+        entry = {
+            "job_id": job_id,
+            "job_title": title,
+            "employer_name": job.get("employer_name"),
+            "job_apply_link": job.get("job_apply_link"),
+        }
 
-        if not job_id or job_id in seen_ids or job_id in included_ids:
-            continue
-        if exclude_remote and job.get("job_is_remote"):
-            continue
-        if any(kw in title for kw in exclude_keywords):
-            continue
-        if require_keywords and not any(kw in title or kw in description for kw in require_keywords):
-            continue
+        if not job_id:
+            entry["decision"], entry["reason"] = "dropped", "missing job_id"
+        elif job_id in seen_ids:
+            entry["decision"], entry["reason"] = "dropped", "already sent in a previous run"
+        elif job_id in included_ids:
+            entry["decision"], entry["reason"] = "dropped", "duplicate within this run (matched multiple search terms)"
+        elif exclude_remote and job.get("job_is_remote"):
+            entry["decision"], entry["reason"] = "dropped", "tagged remote, exclude_remote_results is on"
+        elif any(kw in title_lower for kw in exclude_keywords):
+            matched = next(kw for kw in exclude_keywords if kw in title_lower)
+            entry["decision"], entry["reason"] = "dropped", f"title matched exclude keyword '{matched}'"
+        elif require_keywords and not any(kw in title_lower or kw in description for kw in require_keywords):
+            entry["decision"], entry["reason"] = "dropped", "no require_keywords found in title or description"
+        else:
+            new_jobs.append(job)
+            included_ids.add(job_id)
+            entry["decision"], entry["reason"] = "kept", "passed all filters"
 
-        new_jobs.append(job)
-        included_ids.add(job_id)
+        log_entries.append(entry)
 
-    return new_jobs[:max_results]
+    kept = new_jobs[:max_results]
+    cut_ids = {j["job_id"] for j in new_jobs[max_results:]}
+    for entry in log_entries:
+        if entry["job_id"] in cut_ids:
+            entry["decision"], entry["reason"] = "dropped", f"exceeded max_results ({max_results})"
+
+    return kept, log_entries
+
+
+def append_search_log(log_entries):
+    run_record = {
+        "run_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "results": log_entries,
+    }
+    with open(SEARCH_LOG_PATH, "a") as f:
+        f.write(json.dumps(run_record) + "\n")
 
 
 def build_email(jobs):
@@ -143,7 +176,8 @@ def main():
     seen_ids = load_seen_ids()
 
     jobs = search_jobs(config)
-    new_jobs = filter_new_jobs(jobs, seen_ids, config)
+    new_jobs, log_entries = evaluate_jobs(jobs, seen_ids, config)
+    append_search_log(log_entries)
 
     if not new_jobs:
         print("No new jobs found.")

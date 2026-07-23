@@ -29,10 +29,10 @@ jobs:
           GMAIL_ADDRESS: ${{ secrets.GMAIL_ADDRESS }}
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
 
-      - name: Save updated seen_jobs.json
+      - name: Save updated seen_jobs.json and search_log.jsonl
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add seen_jobs.json
-          git diff --quiet --cached || git commit -m "Update seen jobs list"
+          git add seen_jobs.json search_log.jsonl
+          git diff --quiet --cached || git commit -m "Update seen jobs list and search log"
           git push
