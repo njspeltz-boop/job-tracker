@@ -1,7 +1,14 @@
 {
-  "job_titles": ["Software Engineer"],
-  "locations": ["United States"],
-  "remote_only": true,
-  "exclude_keywords": ["Senior", "Staff", "Principal", "Director"],
+  "job_titles": [
+    "Private Equity Associate",
+    "Venture Capital Associate",
+    "Portfolio Analyst",
+    "Investment Analyst",
+    "Private Equity Vice President",
+    "Venture Capital Vice President"
+  ],
+  "locations": ["Minnesota", "Remote"],
+  "remote_only": false,
+  "exclude_keywords": ["Director", "Staff"],
   "max_results": 20
 }
