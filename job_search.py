@@ -24,7 +24,7 @@ import requests
 CONFIG_PATH = Path(__file__).parent / "config.json"
 SEEN_JOBS_PATH = Path(__file__).parent / "seen_jobs.json"
 
-JSEARCH_URL = "https://jsearch.p.rapidapi.com/search"
+JSEARCH_URL = "https://jsearch.p.rapidapi.com/search-v2"
 JSEARCH_HOST = "jsearch.p.rapidapi.com"
 
 
