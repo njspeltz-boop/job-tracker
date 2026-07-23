@@ -86,12 +86,13 @@ def filter_new_jobs(jobs, seen_ids, config):
     max_results = config.get("max_results", 20)
 
     new_jobs = []
+    included_ids = set()
     for job in jobs:
         job_id = job.get("job_id")
         title = (job.get("job_title") or "").lower()
         description = (job.get("job_description") or "").lower()
 
-        if not job_id or job_id in seen_ids:
+        if not job_id or job_id in seen_ids or job_id in included_ids:
             continue
         if exclude_remote and job.get("job_is_remote"):
             continue
@@ -101,6 +102,7 @@ def filter_new_jobs(jobs, seen_ids, config):
             continue
 
         new_jobs.append(job)
+        included_ids.add(job_id)
 
     return new_jobs[:max_results]
 
