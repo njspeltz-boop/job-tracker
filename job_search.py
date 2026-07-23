@@ -46,8 +46,9 @@ def save_seen_ids(seen_ids):
 
 
 def search_jobs(config):
-    """Query the JSearch API once per job title in config.json and
-    combine the results into a single list."""
+    """Query the JSearch API once per broad search term in config.json
+    (rather than exact job titles, so differently-worded postings still
+    turn up) and combine the results into a single list."""
     api_key = os.environ["RAPIDAPI_KEY"]
     headers = {
         "X-RapidAPI-Key": api_key,
@@ -57,8 +58,8 @@ def search_jobs(config):
     locations = ", ".join(config["locations"])
     all_jobs = []
 
-    for title in config["job_titles"]:
-        query = f"{title} in {locations}" if locations else title
+    for term in config["search_terms"]:
+        query = f"{term} in {locations}" if locations else term
         params = {
             "query": query,
             "page": "1",
@@ -74,19 +75,29 @@ def search_jobs(config):
 
 
 def filter_new_jobs(jobs, seen_ids, config):
-    """Drop jobs we've already emailed and anything matching an
-    exclude keyword in the title."""
+    """Drop jobs we've already emailed, remote postings (if configured),
+    anything matching an exclude keyword in the title, and anything that
+    doesn't mention at least one require keyword - checked against the
+    full description, not just the title, since relevant roles are often
+    worded differently than the search terms."""
+    require_keywords = [kw.lower() for kw in config.get("require_keywords", [])]
     exclude_keywords = [kw.lower() for kw in config.get("exclude_keywords", [])]
+    exclude_remote = config.get("exclude_remote_results", False)
     max_results = config.get("max_results", 20)
 
     new_jobs = []
     for job in jobs:
         job_id = job.get("job_id")
         title = (job.get("job_title") or "").lower()
+        description = (job.get("job_description") or "").lower()
 
         if not job_id or job_id in seen_ids:
             continue
+        if exclude_remote and job.get("job_is_remote"):
+            continue
         if any(kw in title for kw in exclude_keywords):
+            continue
+        if require_keywords and not any(kw in title or kw in description for kw in require_keywords):
             continue
 
         new_jobs.append(job)

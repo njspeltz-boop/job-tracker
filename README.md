@@ -51,17 +51,28 @@ repository secret**. Add these three:
 
 ### 4. Edit `config.json` with your real preferences
 
-Open `config.json` and change the placeholder values, for example:
+Open `config.json` and change the values, for example:
 
 ```json
 {
-  "job_titles": ["Data Analyst", "Junior Data Scientist"],
-  "locations": ["Remote", "Austin, TX"],
+  "search_terms": ["Private Equity", "Venture Capital"],
+  "locations": ["Minnesota"],
   "remote_only": false,
-  "exclude_keywords": ["Senior", "Staff", "Principal"],
+  "exclude_remote_results": true,
+  "require_keywords": ["private equity", "venture capital", "portfolio", "diligence", "fund"],
+  "exclude_keywords": ["Director", "Staff", "Intern"],
   "max_results": 20
 }
 ```
+
+What each field does:
+- `search_terms` — broad topics used to build the search query (e.g. "Private Equity in Minnesota"). Kept broad on purpose: JSearch's underlying search matches on meaning, not just exact text, so a broad term surfaces postings whose title is worded differently than you'd expect.
+- `locations` — where to search.
+- `remote_only` — if `true`, only fully-remote postings match, regardless of `locations`.
+- `exclude_remote_results` — if `true`, drops any posting JSearch tags as remote, even if it turned up while searching your `locations` (useful when you want in-person/local roles specifically).
+- `require_keywords` — a posting must mention at least one of these words *somewhere in its title or full description* to be included. This is what gives the matching "nuance" — a posting titled something unexpected (e.g. "Investment Team Associate") still gets caught if the description mentions "private equity" or "diligence".
+- `exclude_keywords` — checked against the title only; any match drops the posting (e.g. filtering out "Director" or "Intern" level roles).
+- `max_results` — cap on how many new postings get emailed in one run.
 
 Commit and push that change whenever you want to adjust what it searches for.
 

@@ -1,14 +1,19 @@
 {
-  "job_titles": [
-    "Private Equity Associate",
-    "Venture Capital Associate",
-    "Portfolio Analyst",
-    "Investment Analyst",
-    "Private Equity Vice President",
-    "Venture Capital Vice President"
-  ],
-  "locations": ["Minnesota", "Remote"],
+  "search_terms": ["Private Equity", "Venture Capital"],
+  "locations": ["Minnesota"],
   "remote_only": false,
-  "exclude_keywords": ["Director", "Staff"],
+  "exclude_remote_results": true,
+  "require_keywords": [
+    "private equity",
+    "venture capital",
+    "portfolio",
+    "diligence",
+    "fund",
+    "secondaries",
+    "alternative investments",
+    "lp",
+    "capital markets"
+  ],
+  "exclude_keywords": ["Director", "Staff", "Intern", "Coordinator", "Paralegal"],
   "max_results": 20
 }
