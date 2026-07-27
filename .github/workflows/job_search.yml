@@ -2,10 +2,14 @@ name: Find job postings
 
 on:
   schedule:
-    # Runs at 13:00 UTC (~9am US Eastern) every Monday and Thursday.
+    # Runs at ~13:12 UTC (~9am US Eastern) every Monday and Thursday.
     # GitHub's cron always runs in UTC - adjust the hour here if you
-    # want it to land at a different local time.
-    - cron: "0 13 * * 1,4"
+    # want it to land at a different local time. Deliberately NOT on
+    # the hour (minute 0): GitHub Actions' scheduler is documented to
+    # delay or drop runs scheduled exactly on the hour, since that's
+    # peak load across every scheduled workflow on GitHub. Minute 12
+    # avoids that congestion.
+    - cron: "12 13 * * 1,4"
   workflow_dispatch: {}  # lets you trigger a run manually from the Actions tab
 
 permissions:
